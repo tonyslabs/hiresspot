@@ -1,0 +1,17 @@
+{
+  "name": "@hiresspot/core",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Dominio, fuentes, matching y reproductor de HiResSpot (TypeScript puro, sin dependencias de plataforma)",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.0"
+  }
+}

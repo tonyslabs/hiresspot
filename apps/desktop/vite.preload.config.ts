@@ -3,8 +3,6 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   build: {
-    outDir: 'out/preload',
-    emptyOutDir: false,
     lib: {
       entry: 'src/preload/preload.ts',
       formats: ['cjs'],

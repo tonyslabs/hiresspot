@@ -1,26 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
     "skipLibCheck": true,
-    "jsx": "react-jsx",
-    "baseUrl": "./",
-    "paths": {
-      "@renderer/*": ["src/renderer/*"]
-    },
-    "types": ["electron", "vite/client"]
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.d.ts",
-    "forge.config.ts",
-    "vite.main.config.ts",
-    "vite.preload.config.ts",
-    "vite.renderer.config.ts"
-  ]
+    "strict": true,
+    "noEmit": true,
+    "jsx": "react-jsx"
+  }
 }

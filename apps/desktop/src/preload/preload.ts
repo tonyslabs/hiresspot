@@ -1,26 +1,41 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { pathToFileURL } from 'node:url';
+import type { PlatformAPI } from '@hiresspot/core';
 
-const api = {
-  spotify: {
-    login: () => ipcRenderer.invoke('spotify:login') as Promise<string>,
-    logout: () => ipcRenderer.invoke('spotify:logout') as Promise<string>
-  },
-  system: {
-    openFolderDialog: () => ipcRenderer.invoke('system:openFolderDialog') as Promise<string | null>
-  },
+const api: PlatformAPI = {
   library: {
-    scanFolder: (dir: string) => ipcRenderer.invoke('library:scanFolder', dir) as Promise<Track[]>
+    getRoots: () => ipcRenderer.invoke('library:getRoots'),
+    addRoot: () => ipcRenderer.invoke('library:addRoot'),
+    removeRoot: (root) => ipcRenderer.invoke('library:removeRoot', root),
+    scan: (root) => ipcRenderer.invoke('library:scan', root)
   },
-  utils: {
-    toFileURL: (p: string) => `local-audio://${pathToFileURL(p).pathname}`
-  },
-  file: {
-    read: async (path: string): Promise<ArrayBuffer> => {
-      const buf: Buffer = await ipcRenderer.invoke('file:read', path);
-      return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  media: {
+    urlFor: (track) => `hires-media://audio/${encodeURIComponent(track.path ?? track.sourceId)}`,
+    sanitizedFlacUrl: (upstreamUrl) => `hires-media://flac/${encodeURIComponent(upstreamUrl)}`,
+    coverPixels: async (url) => {
+      const r = (await ipcRenderer.invoke('media:coverPixels', url)) as { width: number; height: number; data: Uint8Array } | null;
+      return r ? { width: r.width, height: r.height, data: new Uint8ClampedArray(r.data) } : null;
     }
+  },
+  http: (url, options) => ipcRenderer.invoke('http:request', url, { timeoutMs: options?.timeoutMs }),
+  settings: {
+    get: (key) => ipcRenderer.invoke('settings:get', key),
+    set: (key, value) => ipcRenderer.invoke('settings:set', key, value)
+  },
+  secrets: {
+    isAvailable: () => ipcRenderer.invoke('secrets:isAvailable'),
+    get: (key) => ipcRenderer.invoke('secrets:get', key),
+    set: (key, value) => ipcRenderer.invoke('secrets:set', key, value),
+    delete: (key) => ipcRenderer.invoke('secrets:delete', key)
+  },
+  power: {
+    setPlaying: (playing) => ipcRenderer.invoke('power:playing', !!playing)
+  },
+  spotify: {
+    status: () => ipcRenderer.invoke('spotify:status'),
+    login: () => ipcRenderer.invoke('spotify:login'),
+    logout: () => ipcRenderer.invoke('spotify:logout'),
+    api: (path) => ipcRenderer.invoke('spotify:api', path)
   }
 };
 
-contextBridge.exposeInMainWorld('api', api);
+contextBridge.exposeInMainWorld('hiresspot', api);
