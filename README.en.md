@@ -66,6 +66,8 @@ Binary installation notes:
 
 ## Security and Privacy
 
+Security policy and how to report a vulnerability: [SECURITY.md](SECURITY.md).
+
 - Desktop (Electron): sandbox enabled, `contextIsolation`, strict CSP, a custom protocol limited to the folders you authorize, and sender verification on every IPC call.
 - Protected credentials: sensitive credentials and tokens are encrypted with operating system keyrings (`safeStorage` on desktop, Android Keystore on mobile). When a secure system keyring is unavailable, passwords are not persisted to disk.
 - Spotify authentication: OAuth 2.0 with PKCE without embedding or transmitting client secrets.
