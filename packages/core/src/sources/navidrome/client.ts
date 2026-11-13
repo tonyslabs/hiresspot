@@ -71,6 +71,10 @@ export interface PlaylistInfo {
   name: string;
   songCount: number;
   duration?: number;
+  /** Id de portada que reporta el servidor (Navidrome arma un collage de la playlist). */
+  coverArt?: string;
+  /** URL de la portada con la autenticación de esta sesión; no se guarda en caché. */
+  coverUrl?: string;
 }
 
 export interface SyncProgress {
@@ -358,7 +362,7 @@ export class NavidromeClient {
 
   async getPlaylists(): Promise<PlaylistInfo[]> {
     const r = await this.call<{ playlists?: { playlist?: PlaylistInfo | PlaylistInfo[] } }>('getPlaylists');
-    return toArray(r.playlists?.playlist);
+    return toArray(r.playlists?.playlist).map((p) => (p.coverArt ? { ...p, coverUrl: this.coverArtUrl(p.coverArt, 400) } : p));
   }
 
   async getPlaylistTracks(id: string): Promise<Track[]> {

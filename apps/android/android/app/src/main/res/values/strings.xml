@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HiResSpot</string>
+    <string name="title_activity_main">HiResSpot</string>
+    <string name="package_name">io.drskxll.hiresspot</string>
+    <string name="custom_url_scheme">io.drskxll.hiresspot</string>
+</resources>

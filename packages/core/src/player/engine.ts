@@ -371,6 +371,8 @@ export class PlayerEngine {
     const url = this.resolveUrl(track);
     // Web Audio solo recibe señal de orígenes con CORS: el protocolo propio la incluye
     el.crossOrigin = url.startsWith('hires-media:') ? 'anonymous' : null;
+    // Metadatos para elementos que no son <audio> real (el reproductor nativo de Android los usa en la notificación)
+    (el as unknown as { track?: Track }).track = track;
     el.src = url;
     el.preload = 'auto';
     this.trackOf.set(el, track);

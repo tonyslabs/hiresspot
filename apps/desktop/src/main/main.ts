@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, powerSaveBlocker, protocol, safeStorage, session, shell, type IpcMainInvokeEvent } from 'electron';
 import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
-import { dirname, extname, isAbsolute, join, relative } from 'node:path';
+import { spawn } from 'node:child_process';
+import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import fg from 'fast-glob';
 import { createSpotify } from './spotify';
@@ -16,6 +17,27 @@ declare const MAIN_WINDOW_VITE_NAME: string;
 // Solo en builds sin empaquetar: en la app distribuida estas variables no hacen nada.
 const DEBUG = !app.isPackaged && process.env.HIRESSPOT_DEBUG === '1';
 if (!app.isPackaged && process.env.HIRESSPOT_USER_DATA) app.setPath('userData', process.env.HIRESSPOT_USER_DATA);
+
+// Windows (instalador Squirrel): durante instalar, actualizar o desinstalar, Squirrel abre la app con un
+// argumento `--squirrel-*`. Hay que crear/quitar los accesos directos y salir enseguida, sin abrir ventana.
+const squirrelEvent = ((): string | null => {
+  if (process.platform !== 'win32') return null;
+  const cmd = process.argv[1] ?? '';
+  if (!['--squirrel-install', '--squirrel-updated', '--squirrel-uninstall', '--squirrel-obsolete'].includes(cmd)) return null;
+  const update = resolve(dirname(process.execPath), '..', 'Update.exe');
+  const exe = basename(process.execPath);
+  const run = (args: string[]) => {
+    try {
+      spawn(update, args, { detached: true, stdio: 'ignore' }).unref();
+    } catch (error) {
+      console.error('Squirrel:', error);
+    }
+  };
+  if (cmd === '--squirrel-install' || cmd === '--squirrel-updated') run(['--createShortcut', exe]);
+  if (cmd === '--squirrel-uninstall') run(['--removeShortcut', exe]);
+  setTimeout(() => app.quit(), 1000);
+  return cmd;
+})();
 
 // Linux: Electron solo detecta el llavero en GNOME/KDE y en otros escritorios (bspwm, i3…) cae a
 // "basic_text" (sin cifrado real). Si hay un servicio org.freedesktop.secrets (gnome-keyring,
@@ -283,6 +305,7 @@ app.on('web-contents-created', (_event, contents) => {
 });
 
 app.whenReady().then(async () => {
+  if (squirrelEvent) return; // evento del instalador: ya se está cerrando
   await loadRoots();
 
   // Desarrollo: Vite marca los módulos de los paquetes del workspace como inmutables y Chromium los

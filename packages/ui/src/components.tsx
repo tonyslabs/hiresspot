@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { fallbackPalette, fidelity, formatQuality, formatSpec, hslToCss, isHiRes, qualityTier, type SourceKind, type Track } from '@hiresspot/core';
 import { useLensFilter } from './glass';
 import {
@@ -15,6 +15,7 @@ import {
   IconVolume
 } from './icons';
 import { usePlayer, usePlayerState, useSmoothPosition } from './player';
+import { useIsMobile } from './useMediaQuery';
 import { useTrackMenu } from './TrackMenu';
 
 export const formatTime = (sec?: number) => {
@@ -45,7 +46,7 @@ export const IconButton: React.FC<{
     aria-label={label}
     aria-pressed={active}
     onClick={onClick}
-    className={`grid place-items-center w-9 h-9 rounded-full transition-colors duration-[var(--dur-1)] hover:bg-fill-2 ${
+    className={`grid place-items-center w-9 h-9 max-md:w-11 max-md:h-11 rounded-full transition-colors duration-[var(--dur-1)] hover:bg-fill-2 ${
       active ? 'text-tint' : 'text-fg-2 hover:text-fg'
     } ${className}`}
   >
@@ -229,9 +230,18 @@ export const TrackRow: React.FC<{
 export const SeekBar: React.FC<{ variant?: 'full' | 'inline' }> = ({ variant = 'full' }) => {
   const player = usePlayer();
   const { duration } = usePlayerState();
-  const position = useSmoothPosition();
+  const livePosition = useSmoothPosition();
+  // Mientras se arrastra se muestra la posición bajo el puntero; el salto real se hace al soltar
+  // (buscar en cada movimiento satura los streams remotos y corta el audio).
+  const [drag, setDrag] = useState<number | null>(null);
+  const position = drag !== null ? drag * duration : livePosition;
   const pct = duration ? Math.min(100, (position / duration) * 100) : 0;
   const inline = variant === 'inline';
+
+  const ratioAt = (e: React.PointerEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    return rect.width > 0 ? Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width)) : 0;
+  };
 
   const slider = (
     <div
@@ -242,11 +252,23 @@ export const SeekBar: React.FC<{ variant?: 'full' | 'inline' }> = ({ variant = '
       aria-valuemax={Math.round(duration)}
       aria-valuenow={Math.round(position)}
       aria-valuetext={`${formatTime(position)} de ${formatTime(duration)}`}
-      className={`group/seek cursor-pointer flex items-center ${inline ? 'absolute inset-x-4 bottom-0 h-4 items-end pb-1' : 'relative h-5 flex-1'}`}
-      onClick={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        player.seekRatio((e.clientX - rect.left) / rect.width);
+      className={`group/seek cursor-pointer select-none touch-none flex items-center ${inline ? 'absolute inset-x-4 bottom-0 h-5 items-end pb-1.5' : 'relative h-6 flex-1'}`}
+      onPointerDown={(e) => {
+        if (e.button !== 0 || !duration) return;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        setDrag(ratioAt(e));
       }}
+      onPointerMove={(e) => {
+        if (drag !== null) setDrag(ratioAt(e));
+      }}
+      onPointerUp={(e) => {
+        if (drag === null) return;
+        const r = ratioAt(e);
+        setDrag(null);
+        player.seekRatio(r);
+      }}
+      onPointerCancel={() => setDrag(null)}
+      onLostPointerCapture={() => setDrag(null)}
       onKeyDown={(e) => {
         if (e.key === 'ArrowRight') player.seek(position + 5);
         else if (e.key === 'ArrowLeft') player.seek(Math.max(0, position - 5));
@@ -254,9 +276,16 @@ export const SeekBar: React.FC<{ variant?: 'full' | 'inline' }> = ({ variant = '
         e.preventDefault();
       }}
     >
-      <div className={`w-full rounded-full bg-fill-2 transition-all duration-[var(--dur-1)] ${inline ? 'h-[3px] group-hover/seek:h-[5px]' : 'h-1.5 group-hover/seek:h-2'}`}>
+      <div className={`w-full rounded-full bg-fill-2 transition-[height] duration-[var(--dur-1)] ${inline ? 'h-[3px] group-hover/seek:h-[5px]' : 'h-1.5 group-hover/seek:h-2'} ${drag !== null ? (inline ? '!h-[5px]' : '!h-2') : ''}`}>
         <div className="h-full rounded-full bg-tint" style={{ width: `${pct}%` }} />
       </div>
+      <span
+        aria-hidden="true"
+        className={`absolute -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-fg shadow-lift pointer-events-none transition-opacity duration-[var(--dur-1)] ${
+          drag !== null ? 'opacity-100 scale-110' : 'opacity-0 group-hover/seek:opacity-100 group-focus-visible/seek:opacity-100'
+        } ${inline ? 'bottom-[3px]' : 'top-1/2 -translate-y-1/2'}`}
+        style={{ left: inline ? `calc(${pct}% )` : `${pct}%` }}
+      />
     </div>
   );
 
@@ -270,7 +299,7 @@ export const SeekBar: React.FC<{ variant?: 'full' | 'inline' }> = ({ variant = '
   );
 };
 
-const PlayButton: React.FC<{ size: number; glass?: boolean }> = ({ size, glass }) => {
+export const PlayButton: React.FC<{ size: number; glass?: boolean }> = ({ size, glass }) => {
   const player = usePlayer();
   const s = usePlayerState();
   const busy = s.status === 'playing' || s.status === 'loading';
@@ -386,18 +415,24 @@ export const NowPlayingBar: React.FC<{ onOpen: () => void; queueOpen: boolean }>
   const dockRef = useRef<HTMLElement>(null);
   useLensFilter(dockRef, { id: 'lens-dock', radius: 999, bezel: 22, scale: 80 });
   const t = s.current;
+  // En el teléfono el dock es un mini reproductor: carátula, título y play. El resto está en "Reproduciendo".
+  const mobile = useIsMobile();
 
   return (
     <footer
       ref={dockRef}
-      className="glass-lens fixed bottom-3 z-40 h-[68px] grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3"
-      style={{ left: 'var(--chrome-left)', right: 'var(--gutter)', marginInline: 'auto', maxWidth: 1040 }}
+      className={`glass-lens fixed z-40 grid items-center px-3 ${
+        mobile ? 'h-[64px] grid-cols-[minmax(0,1fr)_auto] gap-2' : 'h-[68px] grid-cols-[auto_minmax(0,1fr)_auto] gap-3'
+      }`}
+      style={{ bottom: 'var(--dock-bottom)', left: 'var(--chrome-left)', right: 'var(--gutter)', marginInline: 'auto', maxWidth: 1040 }}
     >
-      <div className={t ? '' : 'opacity-40'}>
-        <TransportMini />
-      </div>
+      {mobile ? null : (
+        <div className={t ? '' : 'opacity-40'}>
+          <TransportMini />
+        </div>
+      )}
 
-      <div className="relative h-[52px] rounded-full bg-fill-display overflow-hidden flex items-center">
+      <div className={`relative rounded-full bg-fill-display overflow-hidden flex items-center h-[52px]`}>
         <button
           type="button"
           onClick={onOpen}
@@ -414,9 +449,9 @@ export const NowPlayingBar: React.FC<{ onOpen: () => void; queueOpen: boolean }>
               <div className="text-caption text-fg-2 truncate">{t ? `${t.artist} — ${t.album}` : 'Elige algo para empezar'}</div>
             )}
           </div>
-          {t ? <QualitySeal track={t} /> : null}
+          {t && !mobile ? <QualitySeal track={t} /> : null}
         </button>
-        {t ? (
+        {t && !mobile ? (
           <div className="flex items-center pr-2 gap-0.5">
             <ShuffleRepeat />
           </div>
@@ -424,12 +459,18 @@ export const NowPlayingBar: React.FC<{ onOpen: () => void; queueOpen: boolean }>
         {t ? <SeekBar variant="inline" /> : null}
       </div>
 
-      <div className="flex items-center gap-0.5">
-        <VolumeControl />
-        <IconButton label="Cola de reproducción" active={queueOpen} onClick={onOpen}>
-          <IconQueue />
-        </IconButton>
-      </div>
+      {mobile ? (
+        <div className={t ? '' : 'opacity-40'}>
+          <PlayButton size={44} />
+        </div>
+      ) : (
+        <div className="flex items-center gap-0.5">
+          <VolumeControl />
+          <IconButton label="Cola de reproducción" active={queueOpen} onClick={onOpen}>
+            <IconQueue />
+          </IconButton>
+        </div>
+      )}
     </footer>
   );
 };

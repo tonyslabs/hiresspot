@@ -7,6 +7,7 @@ import { usePlayer, usePlayerState } from './player';
 import { useSpotify } from './spotify';
 import { useTheme, type ThemeChoice } from './theme';
 import { ColorSettings } from './ColorSettings';
+import { useIsMobile } from './useMediaQuery';
 import { EqualizerPanel, RateSelect, ShortcutList } from './PlaybackSettings';
 
 const Group: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
@@ -32,6 +33,7 @@ const dangerBtnCls = 'h-9 px-3.5 rounded-ctl bg-fill-2 text-callout text-danger 
 
 export const Settings: React.FC = () => {
   const platform = usePlatform();
+  const mobile = useIsMobile();
   const player = usePlayer();
   const { replayGain } = usePlayerState();
   const { theme, setTheme, glass, setGlass, motion, setMotion, ambient, setAmbient } = useTheme();
@@ -132,13 +134,18 @@ export const Settings: React.FC = () => {
         </Row>
       </Group>
 
-      <Group title="Ecualizador">
-        <EqualizerPanel />
-      </Group>
+      {/* El ecualizador usa Web Audio: no existe con el reproductor nativo de Android. Los atajos no aplican al táctil. */}
+      {platform.media.supportsEqualizer === false ? null : (
+        <Group title="Ecualizador">
+          <EqualizerPanel />
+        </Group>
+      )}
 
-      <Group title="Atajos de teclado">
-        <ShortcutList />
-      </Group>
+      {mobile ? null : (
+        <Group title="Atajos de teclado">
+          <ShortcutList />
+        </Group>
+      )}
 
       <Group title="Comparación de bibliotecas">
         <Row label="Tolerancia de duración" hint="Diferencia máxima, en segundos, para dar por iguales dos pistas emparejadas por título y artista.">
@@ -147,7 +154,7 @@ export const Settings: React.FC = () => {
         </Row>
       </Group>
 
-      <Group title="Bibliotecas locales">
+      {platform.library.supported === false ? null : <Group title="Bibliotecas locales">
         <Row label="Carpetas de música" hint="FLAC y WAV de estas carpetas aparecen en Local. Solo se lee de las carpetas que autorices.">
           <button type="button" className={btnCls} onClick={() => local.addFolder()}>Agregar carpeta…</button>
           {local.roots.length > 0 ? <button type="button" className={btnCls} onClick={() => local.reload()}>Recargar</button> : null}
@@ -157,7 +164,7 @@ export const Settings: React.FC = () => {
             <button type="button" className={dangerBtnCls} onClick={() => local.removeFolder(r)}>Quitar</button>
           </Row>
         ))}
-      </Group>
+      </Group>}
 
       <Group title="Cuentas y sesiones">
         <Row

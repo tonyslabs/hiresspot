@@ -14,6 +14,7 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
   const [engine] = useState(
     () =>
       new PlayerEngine({
+        createAudio: platform.media.createAudio ? () => platform.media.createAudio!() : undefined,
         resolveUrl: (track) => {
           if (track.source !== 'navidrome') return platform.media.urlFor(track);
           const url = navidrome.streamUrl(track);
@@ -25,6 +26,12 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
   );
 
   useEffect(() => bindMediaSession(engine), [engine]);
+
+  // Siguiente/anterior desde la notificación o los auriculares (plataformas con reproductor nativo)
+  useEffect(
+    () => platform.media.onRemoteCommand?.((command) => (command === 'next' ? engine.next() : engine.prev())),
+    [platform, engine]
+  );
 
   // Modo ReplayGain guardado (por defecto el motor usa "pista")
   useEffect(() => {

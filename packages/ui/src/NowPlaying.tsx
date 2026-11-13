@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { activeLineIndex, formatQuality, type Lyrics, type Track } from '@hiresspot/core';
+import { useIsMobile } from './useMediaQuery';
 import { Cover, EqBars, formatTime, IconButton, QualitySeal, ROW_HEIGHT, SeekBar, SourceChip, Transport, VolumeControl } from './components';
 import { FidelityRing } from './Fidelity';
 import { IconChevronDown, IconClose } from './icons';
@@ -18,7 +19,7 @@ const Segmented: React.FC<{ value: PanelTab; onChange: (v: PanelTab) => void }> 
         role="tab"
         aria-selected={value === id}
         onClick={() => onChange(id)}
-        className={`h-8 px-3.5 rounded-full text-callout transition-colors duration-[var(--dur-1)] ${
+        className={`h-8 max-md:h-10 px-3.5 rounded-full text-callout transition-colors duration-[var(--dur-1)] ${
           value === id ? 'bg-fill-3 text-fg font-semibold shadow-[inset_0_1px_0_var(--glass-hi)]' : 'text-fg-2 hover:text-fg'
         }`}
       >
@@ -87,38 +88,28 @@ export const NowPlaying: React.FC<{ onClose: () => void; initialTab?: PanelTab }
   const [tab, setTab] = useState<PanelTab>(initialTab);
   const closeRef = useRef<HTMLButtonElement>(null);
   const playing = s.status === 'playing' || s.status === 'loading';
+  // Teléfono: una sola columna; la cola y las letras viven en una hoja a pantalla completa
+  const mobile = useIsMobile();
+  const [sheet, setSheet] = useState(false);
+  const sheetOpen = mobile && sheet;
+  const back = () => (sheetOpen ? setSheet(false) : onClose());
 
+  // `back` cambia con `sheet`; el listener usa siempre la versión vigente sin reengancharse (ni refocalizar) en cada render
+  const backRef = useRef(back);
+  backRef.current = back;
   useEffect(() => {
     closeRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && backRef.current();
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, []);
 
   const t = s.current;
   const upcoming = Math.max(0, s.queue.length - s.index - 1);
 
-  return (
-    <div role="dialog" aria-modal="true" aria-label="Reproduciendo" className="fixed inset-0 z-[60] grid grid-rows-[auto_minmax(0,1fr)] p-6 gap-4">
-      <div className="flex items-center justify-between">
-        <button
-          ref={closeRef}
-          type="button"
-          onClick={onClose}
-          aria-label="Cerrar (Esc)"
-          title="Cerrar (Esc)"
-          className="grid place-items-center w-9 h-9 rounded-full bg-fill-1 hover:bg-fill-2 transition-colors"
-        >
-          <IconChevronDown size={22} />
-        </button>
-        <div className="text-micro uppercase text-fg-2">Reproduciendo</div>
-        <span className="w-9" />
-      </div>
-
-      <div className="grid gap-8 min-h-0 grid-cols-[minmax(0,1fr)_minmax(340px,400px)]">
-        {/* ---- Izquierda: carátula, datos y controles ---- */}
+  const main = (
         <div className="flex flex-col items-center justify-center gap-5 min-h-0 min-w-0 mx-auto w-full max-w-[560px]">
-          <div className="relative" style={{ width: 'min(46vh, 440px)', aspectRatio: '1 / 1' }}>
+          <div className="relative" style={{ width: 'min(46vh, 100%, 440px)', aspectRatio: '1 / 1' }}>
             {t?.coverUrl ? (
               <img
                 src={t.coverUrl}
@@ -136,7 +127,7 @@ export const NowPlaying: React.FC<{ onClose: () => void; initialTab?: PanelTab }
           </div>
 
           <div className="text-center max-w-full w-full">
-            <div className="text-display line-clamp-2 [text-wrap:balance]" title={t?.title}>{t?.title ?? 'Nada reproduciendo'}</div>
+            <div className="text-display max-md:text-title-1 line-clamp-2 [text-wrap:balance]" title={t?.title}>{t?.title ?? 'Nada reproduciendo'}</div>
             <div className="text-title-2 text-fg-2 font-medium truncate mt-1">{t?.artist ?? ''}</div>
             <div className="text-callout text-fg-2 truncate">{t?.album ?? ''}</div>
             {t ? (
@@ -154,13 +145,16 @@ export const NowPlaying: React.FC<{ onClose: () => void; initialTab?: PanelTab }
             <SeekBar />
           </div>
 
-          <div className="glass-regular flex items-center gap-4 h-[84px] px-6" style={{ borderRadius: 999 }}>
+          <div className="glass-regular flex items-center gap-4 h-[84px] px-6 max-md:h-[76px] max-md:px-4" style={{ borderRadius: 999 }}>
             <Transport large />
-            <VolumeControl />
+            <div className="max-md:hidden">
+              <VolumeControl />
+            </div>
           </div>
         </div>
+  );
 
-        {/* ---- Derecha: cola / letras ---- */}
+  const panel = (
         <div className="glass-regular rounded-island flex flex-col min-h-0 overflow-hidden" style={{ borderRadius: 28 }}>
           <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-3">
             <Segmented value={tab} onChange={setTab} />
@@ -210,7 +204,7 @@ export const NowPlaying: React.FC<{ onClose: () => void; initialTab?: PanelTab }
                       <IconButton
                         label={`Quitar ${tr.title} de la cola`}
                         onClick={() => player.removeAt(i)}
-                        className="!w-7 !h-7 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                        className="!w-7 !h-7 max-md:!w-10 max-md:!h-10 opacity-0 max-md:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
                       >
                         <IconClose size={14} />
                       </IconButton>
@@ -223,7 +217,65 @@ export const NowPlaying: React.FC<{ onClose: () => void; initialTab?: PanelTab }
             <LyricsPanel track={t} />
           )}
         </div>
+  );
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Reproduciendo"
+      className="fixed inset-0 z-[60] grid grid-rows-[auto_minmax(0,1fr)] gap-4 px-6 max-md:px-5"
+      style={{ paddingTop: 'max(24px, calc(var(--safe-top) + 12px))', paddingBottom: 'max(24px, calc(var(--safe-bottom) + 16px))' }}
+    >
+      <div className="flex items-center justify-between">
+        <button
+          ref={closeRef}
+          type="button"
+          onClick={back}
+          aria-label={sheetOpen ? 'Volver' : 'Cerrar (Esc)'}
+          title={sheetOpen ? 'Volver' : 'Cerrar (Esc)'}
+          className="grid place-items-center w-9 h-9 max-md:w-11 max-md:h-11 rounded-full bg-fill-1 hover:bg-fill-2 transition-colors"
+        >
+          <IconChevronDown size={22} />
+        </button>
+        <div className="text-micro uppercase text-fg-2">{sheetOpen ? (tab === 'queue' ? 'Cola' : 'Letras') : 'Reproduciendo'}</div>
+        <span className="w-9" />
       </div>
+
+      {mobile ? (
+        <div className="flex flex-col gap-3 min-h-0">
+          <div className="flex-1 min-h-0 flex flex-col">{sheetOpen ? panel : main}</div>
+          {sheetOpen ? null : (
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setTab('queue');
+                  setSheet(true);
+                }}
+                className="h-11 rounded-full bg-fill-1 hover:bg-fill-2 text-callout font-semibold"
+              >
+                Cola · {upcoming}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTab('lyrics');
+                  setSheet(true);
+                }}
+                className="h-11 rounded-full bg-fill-1 hover:bg-fill-2 text-callout font-semibold"
+              >
+                Letras
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid gap-8 min-h-0 grid-cols-[minmax(0,1fr)_minmax(340px,400px)]">
+          {main}
+          {panel}
+        </div>
+      )}
     </div>
   );
 };

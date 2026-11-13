@@ -37,6 +37,11 @@
   --chrome-left: calc(var(--sidebar-w) + var(--gutter) * 2);
   --chrome-top: 72px;
   --chrome-bottom: 96px;
+  /* Márgenes seguros (barra de estado / gestos). env() en navegadores y Electron; Capacitor (Android) inyecta --safe-area-inset-* */
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  --nav-h: 64px;
+  --dock-bottom: calc(var(--safe-bottom) + var(--gutter));
   /* ---- Vidrio (oscuro) ---- */
   --glass-tint-thin: rgb(16 16 22 / 0.5);
   --glass-tint-regular: rgb(16 16 22 / 0.62);
@@ -488,4 +493,28 @@ body {
     border: 1px solid var(--line);
     color: var(--fg);
   }
+}
+
+/* ===========================================================================
+   Teléfono (< 768 px): barra de navegación inferior en vez de la lateral, mini reproductor sobre ella
+   y páginas a todo el ancho. Va sin @layer para ganar a las reglas de escritorio de arriba.
+   =========================================================================== */
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@media (width < 768px) {
+  :root {
+    --sidebar-w: 0px;
+    --chrome-left: var(--gutter);
+    --chrome-top: calc(var(--safe-top) + 60px);
+    --dock-bottom: calc(var(--safe-bottom) + var(--nav-h) + var(--gutter) * 2);
+    --chrome-bottom: calc(var(--dock-bottom) + 72px);
+  }
+  .page {
+    padding: calc(var(--chrome-top) + 8px) 16px calc(var(--chrome-bottom) + 12px) 16px;
+    scrollbar-gutter: auto;
+  }
+  .page-frame { padding-left: 16px; padding-right: 16px; }
+  .page-frame > .vlist { padding-right: 0; }
 }

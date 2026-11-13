@@ -293,6 +293,22 @@ describe('NavidromeClient: valoraciones, radio y playlists', () => {
     expect((await c.getSimilarSongs('9')).map((t) => t.sourceId)).toEqual(['3']);
   });
 
+  it('getPlaylists añade la URL de portada autenticada solo a las que tienen coverArt', async () => {
+    let seen: URL | null = null;
+    const c = clientWith(async (url) => {
+      seen = new URL(url);
+      return ok(sub({ playlists: { playlist: [{ id: 'a', name: 'A', songCount: 3, coverArt: 'pl-a_1' }, { id: 'b', name: 'B', songCount: 0 }] } }));
+    });
+    const [a, b] = await c.getPlaylists();
+    expect(seen!.pathname).toBe('/rest/getPlaylists.view');
+    const cover = new URL(a.coverUrl!);
+    expect(cover.pathname).toBe('/rest/getCoverArt.view');
+    expect([cover.searchParams.get('id'), cover.searchParams.get('size')]).toEqual(['pl-a_1', '400']);
+    expect(cover.searchParams.get('t')).toBeTruthy(); // token+sal, nunca la contraseña
+    expect(cover.search).not.toContain('sesame');
+    expect(b.coverUrl).toBeUndefined();
+  });
+
   it('createPlaylist y updatePlaylist repiten el parámetro por cada pista', async () => {
     const seen: URL[] = [];
     const c = clientWith(async (url) => {

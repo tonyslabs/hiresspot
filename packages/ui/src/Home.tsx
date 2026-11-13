@@ -48,7 +48,7 @@ const shuffled = <T,>(list: T[]): T[] => {
 const Carousel: React.FC<{ title: string; onRefresh?: () => void; children: React.ReactNode }> = ({ title, onRefresh, children }) => {
   const ref = useRef<HTMLDivElement>(null);
   const scroll = (dir: 1 | -1) => ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.85, behavior: 'smooth' });
-  const btn = 'w-8 h-8 grid place-items-center rounded-full bg-fill-2 hover:bg-fill-3 text-fg-2 hover:text-fg';
+  const btn = 'w-8 h-8 max-md:w-10 max-md:h-10 grid place-items-center rounded-full bg-fill-2 hover:bg-fill-3 text-fg-2 hover:text-fg';
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
@@ -122,8 +122,8 @@ const Feature: React.FC<{ entries: Entry[] }> = ({ entries }) => {
         <img src={album.coverUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-125 blur-3xl opacity-50 pointer-events-none" />
       ) : null}
       <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/10 to-transparent pointer-events-none" />
-      <div className="relative flex items-center gap-6 p-6 w-full">
-        <Cover src={album.coverUrl} seed={album.album} className="w-[180px] h-[180px] shrink-0 rounded-card shadow-lift" />
+      <div className="relative flex items-center gap-6 p-6 w-full max-md:flex-col max-md:items-start max-md:gap-4 max-md:p-5">
+        <Cover src={album.coverUrl} seed={album.album} className="w-[180px] h-[180px] max-md:w-[132px] max-md:h-[132px] shrink-0 rounded-card shadow-lift" />
         <div className="min-w-0 flex-1">
           <div className="text-micro uppercase text-fg-2 mb-1">Para descubrir</div>
           <Link to={e.to} className="block text-title-1 font-semibold truncate hover:underline" title={album.album}>{album.album}</Link>
@@ -132,7 +132,7 @@ const Feature: React.FC<{ entries: Entry[] }> = ({ entries }) => {
             {best ? <QualitySeal track={best} /> : null}
             <span className="tabular-nums">{album.tracks.length} pista(s)</span>
           </div>
-          <div className="flex items-center gap-3 mt-5">
+          <div className="flex flex-wrap items-center gap-3 mt-5">
             {album.tracks[0]?.source === 'spotify' ? null : (
               <button type="button" onClick={() => player.setQueue(album.tracks, 0)} className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-tint text-tint-fg font-semibold hover:opacity-90">
                 <IconPlay size={16} /> Reproducir
@@ -142,9 +142,9 @@ const Feature: React.FC<{ entries: Entry[] }> = ({ entries }) => {
           </div>
         </div>
         {entries.length > 1 ? (
-          <div className="absolute right-5 top-0 flex items-center gap-1.5">
-            <button type="button" aria-label="Anterior" onClick={() => go(-1)} className="w-8 h-8 grid place-items-center rounded-full bg-fill-2 hover:bg-fill-3"><IconBack size={16} /></button>
-            <button type="button" aria-label="Siguiente" onClick={() => go(1)} className="w-8 h-8 grid place-items-center rounded-full bg-fill-2 hover:bg-fill-3"><IconForward size={16} /></button>
+          <div className="absolute right-5 top-0 max-md:right-4 max-md:top-4 flex items-center gap-1.5">
+            <button type="button" aria-label="Anterior" onClick={() => go(-1)} className="w-8 h-8 max-md:w-10 max-md:h-10 grid place-items-center rounded-full bg-fill-2 hover:bg-fill-3"><IconBack size={16} /></button>
+            <button type="button" aria-label="Siguiente" onClick={() => go(1)} className="w-8 h-8 max-md:w-10 max-md:h-10 grid place-items-center rounded-full bg-fill-2 hover:bg-fill-3"><IconForward size={16} /></button>
           </div>
         ) : null}
       </div>

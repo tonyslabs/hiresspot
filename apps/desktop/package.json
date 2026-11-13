@@ -26,6 +26,9 @@
   },
   "devDependencies": {
     "@electron-forge/cli": "^8.0.1",
+    "@electron-forge/maker-deb": "^8.0.1",
+    "@electron-forge/maker-squirrel": "^8.0.1",
+    "@electron-forge/maker-zip": "^8.0.1",
     "@electron-forge/plugin-vite": "^8.0.1",
     "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^22.0.0",
@@ -37,5 +40,10 @@
     "tailwindcss": "^4.3.5",
     "typescript": "^5.9.3",
     "vite": "^7.3.8"
-  }
+  },
+  "author": {
+    "name": "tonyslabs",
+    "email": "136035980+tonyslabs@users.noreply.github.com"
+  },
+  "homepage": "https://hiresspot.drskxll.io"
 }

@@ -13,6 +13,8 @@ export interface SpotifyStatus {
 
 export interface PlatformAPI {
   library: {
+    /** Opcional (por defecto true). false si la plataforma aún no puede leer carpetas locales: la UI oculta "Local". */
+    supported?: boolean;
     /** Carpetas de música que el usuario autorizó. */
     getRoots(): Promise<string[]>;
     /** Abre el selector de carpeta, la autoriza y la devuelve (null si cancela). */
@@ -29,6 +31,15 @@ export interface PlatformAPI {
      * defectuosos que Chromium no sabe abrir. Si la plataforma no lo necesita, se usa la URL original.
      */
     sanitizedFlacUrl?(upstreamUrl: string): string;
+    /**
+     * Opcional. Fábrica de elementos de audio que reemplaza a `new Audio()` (Android usa un reproductor nativo
+     * en un servicio en primer plano, único modo de seguir sonando con la pantalla apagada).
+     */
+    createAudio?(): HTMLAudioElement;
+    /** Opcional (por defecto true). false si el reproductor no pasa por Web Audio y el ecualizador no puede funcionar. */
+    supportsEqualizer?: boolean;
+    /** Opcional. Comandos de los controles del sistema (notificación, auriculares) que el motor no ve como eventos del elemento. */
+    onRemoteCommand?(listener: (command: 'next' | 'prev') => void): () => void;
     /**
      * Opcional. Píxeles RGBA 32x32 de una carátula remota que el canvas no puede leer (sin CORS), para derivar
      * la paleta. La plataforma solo debe atender URLs de portada del servidor configurado.

@@ -1,0 +1,40 @@
+{
+  "name": "@hiresspot/android",
+  "productName": "HiResSpot",
+  "version": "2.0.0",
+  "private": true,
+  "description": "HiResSpot para Android (Capacitor): la misma UI que el escritorio dentro de un WebView",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "sync": "vite build && cap sync android",
+    "apk": "npm run sync && cd android && ./gradlew assembleDebug",
+    "typecheck": "tsc --noEmit -p .",
+    "apk:release": "npm run sync && cd android && ./gradlew assembleRelease",
+    "release:android": "bash scripts/publish-apk.sh"
+  },
+  "dependencies": {
+    "@aparajita/capacitor-secure-storage": "^8.0.1",
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/preferences": "^8.0.1",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@hiresspot/core": "*",
+    "@hiresspot/ui": "*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2",
+    "@tailwindcss/postcss": "^4.3.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.8"
+  }
+}

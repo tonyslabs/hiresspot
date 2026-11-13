@@ -10,6 +10,7 @@ import { IconBack, IconCompare, IconFolder, IconForward, IconHome, IconSearch, I
 import { LibraryBrowser } from './LibraryBrowser';
 import { LocalLibraryProvider, useLocal } from './local';
 import { NavidromeConnect } from './NavidromeConnect';
+import { usePlatform } from './platform';
 import { NavidromeProvider, useNavidrome } from './navidrome';
 import { NowPlaying } from './NowPlaying';
 import { NavidromePlaylists } from './PlaylistPages';
@@ -19,6 +20,7 @@ import { SpotifyProvider, useSpotify } from './spotify';
 import { SpotifyArtists, SpotifyConnect, SpotifyPlaylists } from './SpotifyPages';
 import { ThemeProvider } from './theme';
 import { TrackMenuProvider } from './TrackMenu';
+import { useIsMobile } from './useMediaQuery';
 
 // ---------------------------------------------------------------------------
 // Shell "Cristal de Estudio": lienzo ambiental a sangre + tres islas de vidrio flotantes
@@ -74,13 +76,14 @@ const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 );
 
 const Sidebar: React.FC = () => {
+  const localSupported = usePlatform().library.supported !== false;
   const nd = useNavidrome();
   const sp = useSpotify();
   const local = useLocal();
   const ndHasLibrary = nd.tracks.length > 0;
   const spHasLibrary = sp.tracks.length > 0;
   return (
-    <aside className="glass-regular fixed top-3 bottom-3 left-3 z-30 flex flex-col p-3 gap-0.5" style={{ width: 'var(--sidebar-w)' }}>
+    <aside className="glass-regular fixed top-3 bottom-3 left-3 z-30 flex flex-col p-3 gap-0.5 max-md:hidden" style={{ width: 'var(--sidebar-w)' }}>
       <div className="flex items-center gap-2 px-3 py-2 mb-1">
         <span className="w-1.5 h-1.5 rounded-full bg-gold shrink-0" />
         <span className="text-headline font-bold hidden min-[1080px]:inline">HiResSpot</span>
@@ -88,7 +91,7 @@ const Sidebar: React.FC = () => {
       <NavItem to="/" icon={<IconHome size={18} />}>Inicio</NavItem>
 
       <SectionLabel>Bibliotecas</SectionLabel>
-      <NavItem to="/local/albums" match={['/local']} icon={<IconFolder size={18} />} sourceColor="var(--src-local)">Local</NavItem>
+      {localSupported ? <NavItem to="/local/albums" match={['/local']} icon={<IconFolder size={18} />} sourceColor="var(--src-local)">Local</NavItem> : null}
       <NavItem
         to={ndHasLibrary ? '/navidrome/albums' : '/connect'}
         match={['/navidrome', '/connect']}
@@ -160,13 +163,51 @@ const useLibraryTabs = (): Tab[] => {
   return [];
 };
 
+/** Navegación principal del teléfono: reemplaza a la barra lateral. */
+const BottomNav: React.FC = () => {
+  const localSupported = usePlatform().library.supported !== false;
+  const { pathname } = useLocation();
+  const nd = useNavidrome();
+  const sp = useSpotify();
+  const items: { to: string; label: string; icon: React.ReactNode; match?: string[]; color?: string }[] = [
+    { to: '/', label: 'Inicio', icon: <IconHome size={22} /> },
+    ...(localSupported ? [{ to: '/local/albums', label: 'Local', icon: <IconFolder size={22} />, match: ['/local'], color: 'var(--src-local)' }] : []),
+    { to: nd.tracks.length > 0 ? '/navidrome/albums' : '/connect', label: 'Navidrome', icon: <IconServer size={22} />, match: ['/navidrome', '/connect'], color: 'var(--src-navidrome)' },
+    { to: sp.tracks.length > 0 ? '/spotify/albums' : '/spotify-connect', label: 'Spotify', icon: <IconWaves size={22} />, match: ['/spotify'], color: 'var(--src-spotify)' },
+    { to: '/compare', label: 'Comparar', icon: <IconCompare size={22} /> },
+    { to: '/settings', label: 'Ajustes', icon: <IconSettings size={22} /> }
+  ];
+  return (
+    <nav
+      aria-label="Principal"
+      className="md:hidden glass-regular fixed z-30 grid items-stretch gap-0.5 p-1"
+      style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))`, left: 'var(--gutter)', right: 'var(--gutter)', bottom: 'calc(var(--safe-bottom) + var(--gutter))', height: 'var(--nav-h)', borderRadius: 26 }}
+    >
+      {items.map((it) => {
+        const active = it.match ? it.match.some((m) => pathname.startsWith(m)) : pathname === it.to;
+        return (
+          <NavLink
+            key={it.to + it.label}
+            to={it.to}
+            aria-current={active ? 'page' : undefined}
+            className={`min-w-0 rounded-[22px] flex flex-col items-center justify-center gap-0.5 transition-colors duration-[var(--dur-1)] ${active ? 'bg-fill-2 text-fg' : 'text-fg-2'}`}
+          >
+            <span style={{ color: active ? (it.color ?? 'var(--tint)') : undefined }}>{it.icon}</span>
+            <span className={`text-[10.5px] leading-3 truncate max-w-full px-0.5 ${active ? 'font-semibold' : ''}`}>{it.label}</span>
+          </NavLink>
+        );
+      })}
+    </nav>
+  );
+};
+
 const HeaderBar: React.FC<{ onSearch: () => void }> = ({ onSearch }) => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const tabs = useLibraryTabs();
   return (
-    <header className="glass-thin fixed top-3 right-3 z-30 h-12 flex items-center gap-3 px-3" style={{ left: 'var(--chrome-left)' }}>
-      <div className="flex items-center gap-1">
+    <header className="glass-thin fixed right-3 z-30 h-12 flex items-center gap-3 px-3" style={{ top: 'calc(var(--safe-top) + 12px)', left: 'var(--chrome-left)' }}>
+      <div className="flex items-center gap-1 max-md:hidden">
         <button type="button" aria-label="Atrás" title="Atrás" onClick={() => navigate(-1)} className="grid place-items-center w-8 h-8 rounded-full hover:bg-fill-2">
           <IconBack size={18} />
         </button>
@@ -176,7 +217,7 @@ const HeaderBar: React.FC<{ onSearch: () => void }> = ({ onSearch }) => {
       </div>
 
       {tabs.length > 0 ? (
-        <nav role="tablist" aria-label="Biblioteca" className="flex items-center gap-0.5 bg-fill-1 rounded-full p-0.5 mx-auto">
+        <nav role="tablist" aria-label="Biblioteca" className="flex items-center gap-0.5 bg-fill-1 rounded-full p-0.5 mx-auto max-md:mx-0 max-md:flex-1 max-md:min-w-0 max-md:overflow-x-auto no-scrollbar">
           {tabs.map((t) => {
             const active = pathname === t.to || (t.to.endsWith('/albums') && pathname.startsWith(t.to.replace('/albums', '/albums/'))) || (t.to.endsWith('/artists') && pathname.startsWith(t.to.replace('/artists', '/artists/')));
             return (
@@ -185,7 +226,7 @@ const HeaderBar: React.FC<{ onSearch: () => void }> = ({ onSearch }) => {
                 to={t.to}
                 role="tab"
                 aria-selected={active}
-                className={`h-8 px-3.5 rounded-full text-callout grid place-items-center transition-colors duration-[var(--dur-1)] ${
+                className={`h-8 max-md:h-10 px-3.5 rounded-full text-callout grid place-items-center shrink-0 transition-colors duration-[var(--dur-1)] ${
                   active ? 'bg-fill-3 text-fg font-semibold shadow-[inset_0_1px_0_var(--glass-hi)]' : 'text-fg-2 hover:text-fg'
                 }`}
               >
@@ -195,14 +236,17 @@ const HeaderBar: React.FC<{ onSearch: () => void }> = ({ onSearch }) => {
           })}
         </nav>
       ) : (
-        <div className="mx-auto" />
+        <>
+          <span className="md:hidden flex-1 min-w-0 pl-1 text-headline font-bold truncate">HiResSpot</span>
+          <div className="mx-auto max-md:hidden" />
+        </>
       )}
 
       <button
         type="button"
         onClick={onSearch}
         aria-label="Buscar en todo (Ctrl K)"
-        className="flex items-center gap-2 h-8 min-[1080px]:w-56 px-3 rounded-full bg-fill-1 hover:bg-fill-2 transition-colors text-callout text-fg-2"
+        className="flex items-center gap-2 h-8 max-md:h-10 max-md:w-10 max-md:justify-center min-[1080px]:w-56 px-3 max-md:px-0 rounded-full bg-fill-1 hover:bg-fill-2 transition-colors text-callout text-fg-2"
       >
         <IconSearch size={16} />
         <span className="flex-1 text-left hidden min-[1080px]:inline">Buscar en todo</span>
@@ -220,6 +264,8 @@ const Shell: React.FC = () => {
   const local = useLocal();
   const navigate = useNavigate();
   const [nowOpen, setNowOpen] = useState(false);
+  const mobile = useIsMobile();
+  const localSupported = usePlatform().library.supported !== false;
   const [searchOpen, setSearchOpen] = useState(false);
 
   // Espacio = play/pausa (sin robarlo al buscador, formularios ni botones enfocados)
@@ -289,6 +335,37 @@ const Shell: React.FC = () => {
   const ndHasLibrary = nd.tracks.length > 0;
   const spHasLibrary = sp.tracks.length > 0;
 
+  const tone = (t: 'ok' | 'off' | 'warn'): 'ok' | 'off' | 'warn' => t;
+  const homeCards: React.ComponentProps<typeof Home>['cards'] = [
+                  ...(localSupported ? [{
+                    title: 'Música local',
+                    status: local.roots.length > 0 ? `${local.roots.length} carpeta(s)` : 'Sin carpetas',
+                    tone: tone(local.tracks.length > 0 ? 'ok' : 'off'),
+                    detail: local.tracks.length > 0 ? `${local.tracks.length} pistas FLAC/WAV` : 'Agrega una carpeta desde Ajustes para empezar.',
+                    to: local.tracks.length > 0 ? '/local/albums' : '/settings',
+                    action: local.tracks.length > 0 ? 'Explorar' : 'Agregar carpeta',
+                    source: 'local' as const
+                  }] : []),
+                  {
+                    title: 'Navidrome',
+                    status: nd.status === 'ready' ? 'Conectado' : ndHasLibrary ? 'Biblioteca guardada' : 'Sin conexión',
+                    tone: tone(nd.status === 'ready' ? 'ok' : nd.status === 'disconnected' ? 'off' : 'warn'),
+                    detail: ndHasLibrary ? `${nd.tracks.length} pistas${nd.saved ? ` · ${nd.saved.username}` : ''}` : 'Conecta tu servidor para escuchar en calidad original.',
+                    to: ndHasLibrary ? '/navidrome/albums' : '/connect',
+                    action: ndHasLibrary ? 'Explorar' : 'Conectar',
+                    source: 'navidrome'
+                  },
+                  {
+                    title: 'Spotify',
+                    status: sp.status === 'ready' ? 'Conectado' : spHasLibrary ? 'Biblioteca guardada' : 'Sin conexión',
+                    tone: tone(sp.status === 'ready' ? 'ok' : sp.status === 'disconnected' ? 'off' : 'warn'),
+                    detail: spHasLibrary ? `${sp.tracks.length} pistas · ${sp.playlists.length} playlists` : 'Conecta tu cuenta para ver y comparar tu biblioteca.',
+                    to: spHasLibrary ? '/spotify/albums' : '/spotify-connect',
+                    action: spHasLibrary ? 'Explorar' : 'Conectar',
+                    source: 'spotify'
+                  }
+  ];
+
   return (
     <div className="shell relative h-screen w-screen overflow-hidden bg-bg text-fg" data-np={nowOpen ? '' : undefined}>
       <Ambient />
@@ -298,37 +375,7 @@ const Shell: React.FC = () => {
           <Route
             path="/"
             element={
-              <Home
-                cards={[
-                  {
-                    title: 'Música local',
-                    status: local.roots.length > 0 ? `${local.roots.length} carpeta(s)` : 'Sin carpetas',
-                    tone: local.tracks.length > 0 ? 'ok' : 'off',
-                    detail: local.tracks.length > 0 ? `${local.tracks.length} pistas FLAC/WAV` : 'Agrega una carpeta desde Ajustes para empezar.',
-                    to: local.tracks.length > 0 ? '/local/albums' : '/settings',
-                    action: local.tracks.length > 0 ? 'Explorar' : 'Agregar carpeta',
-                    source: 'local'
-                  },
-                  {
-                    title: 'Navidrome',
-                    status: nd.status === 'ready' ? 'Conectado' : ndHasLibrary ? 'Biblioteca guardada' : 'Sin conexión',
-                    tone: nd.status === 'ready' ? 'ok' : nd.status === 'disconnected' ? 'off' : 'warn',
-                    detail: ndHasLibrary ? `${nd.tracks.length} pistas${nd.saved ? ` · ${nd.saved.username}` : ''}` : 'Conecta tu servidor para escuchar en calidad original.',
-                    to: ndHasLibrary ? '/navidrome/albums' : '/connect',
-                    action: ndHasLibrary ? 'Explorar' : 'Conectar',
-                    source: 'navidrome'
-                  },
-                  {
-                    title: 'Spotify',
-                    status: sp.status === 'ready' ? 'Conectado' : spHasLibrary ? 'Biblioteca guardada' : 'Sin conexión',
-                    tone: sp.status === 'ready' ? 'ok' : sp.status === 'disconnected' ? 'off' : 'warn',
-                    detail: spHasLibrary ? `${sp.tracks.length} pistas · ${sp.playlists.length} playlists` : 'Conecta tu cuenta para ver y comparar tu biblioteca.',
-                    to: spHasLibrary ? '/spotify/albums' : '/spotify-connect',
-                    action: spHasLibrary ? 'Explorar' : 'Conectar',
-                    source: 'spotify'
-                  }
-                ]}
-              />
+              <Home cards={homeCards} />
             }
           />
           <Route path="/settings" element={<Settings />} />
@@ -398,9 +445,15 @@ const Shell: React.FC = () => {
         </Routes>
       </main>
 
-      <Sidebar />
-      <HeaderBar onSearch={() => setSearchOpen(true)} />
-      <NowPlayingBar onOpen={() => setNowOpen(true)} queueOpen={nowOpen} />
+      {/* En el teléfono, "Reproduciendo" es una pantalla completa sin fondo propio: el resto del cromo se oculta */}
+      {mobile && nowOpen ? null : (
+        <>
+          <Sidebar />
+          <BottomNav />
+          <HeaderBar onSearch={() => setSearchOpen(true)} />
+          <NowPlayingBar onOpen={() => setNowOpen(true)} queueOpen={nowOpen} />
+        </>
+      )}
       <GlassDefs />
       <ScrobbleBridge />
       <QueuePersistence />

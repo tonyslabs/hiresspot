@@ -70,7 +70,7 @@ const Actions: React.FC<{ list: Track[] }> = ({ list }) => {
         className={`${pill} bg-fill-2 hover:bg-fill-3 font-medium`}
         onClick={() => {
           player.setShuffle(true);
-          player.setQueue(list, 0);
+          player.setQueue(list, Math.floor(Math.random() * list.length)); // arranca en una pista al azar
         }}
       >
         <IconShuffle size={16} /> Aleatorio
@@ -305,6 +305,11 @@ const TrackList: React.FC<{ kind: 'all' | 'favorites' }> = ({ kind }) => {
         />
       ) : null}
       <PageTitle title={kind === 'all' ? 'Pistas' : favoritesLabel} count={list.length} />
+      {readOnly || list.length === 0 ? null : (
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <Actions list={list} />
+        </div>
+      )}
       {list.length === 0 ? (
         <p className="text-muted">Todavía no hay pistas aquí.</p>
       ) : (
