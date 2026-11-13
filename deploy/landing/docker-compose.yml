@@ -1,0 +1,32 @@
+# Va en el homelab: ~/docker/apps/hiresspot-landing/docker-compose.yml (lo copia deploy.sh).
+# Red `core` = la misma de cloudflared: el túnel de hiresspot.drskxll.io apunta a http://hiresspot-landing:8080
+# Sin imagen propia: nginx sin privilegios sirve los archivos de ./site (solo lectura).
+services:
+  hiresspot-landing:
+    image: nginxinc/nginx-unprivileged:1.27-alpine
+    container_name: hiresspot-landing
+    restart: unless-stopped
+    volumes:
+      - ./site:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./security.conf:/etc/nginx/snippets/security.conf:ro
+    ports:
+      # Para probar antes de abrir el túnel. BIND_ADDR (en .env) = IP de tu tailnet/LAN; por defecto solo local.
+      - "${BIND_ADDR:-127.0.0.1}:8100:8080"
+    networks: [core]
+    # Endurecimiento: usuario no root, sistema de archivos de solo lectura, sin capacidades, con límites
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 64m
+    pids_limit: 64
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  core: { external: true }
