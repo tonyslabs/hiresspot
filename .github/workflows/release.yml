@@ -1,0 +1,106 @@
+name: Release
+
+# Al subir un tag vX.Y.Z se construyen los instaladores de Linux y Windows y se crea un release en BORRADOR
+# para revisarlo antes de publicarlo. "Run workflow" a mano construye todo y deja los archivos como artefactos,
+# sin crear el release.
+# El APK de Android NO se construye aquí: se firma en la TUF con la keystore local (que nunca sale de ese equipo)
+# y se adjunta al borrador con `npm run release:android -w @hiresspot/android -- vX.Y.Z`.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        name: La versión del tag debe coincidir con la de la app
+        run: |
+          version=$(node -p "require('./apps/desktop/package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF" == refs/tags/v* && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::El tag $GITHUB_REF_NAME no coincide con la versión $version de apps/desktop/package.json"
+            exit 1
+          fi
+
+  linux:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: sudo apt-get update && sudo apt-get install -y fakeroot dpkg
+      - run: npm ci
+      - run: npm test
+      - run: npm run make -w @hiresspot/desktop
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          if-no-files-found: error
+          path: |
+            apps/desktop/out/make/deb/x64/*.deb
+            apps/desktop/out/make/zip/linux/x64/*.zip
+
+  windows:
+    needs: check
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run make -w @hiresspot/desktop
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          if-no-files-found: error
+          path: |
+            apps/desktop/out/make/squirrel.windows/x64/HiResSpot-Setup.exe
+            apps/desktop/out/make/zip/win32/x64/*.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [check, linux, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      # upload/download-artifact conservan subcarpetas (deb/x64/…, zip/win32/x64/…): se aplanan antes de sumar y subir
+      - name: Aplanar archivos y calcular sumas
+        run: |
+          mkdir flat
+          find dist -type f -exec cp -t flat {} +
+          cd flat
+          ls -la
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Release en borrador
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" flat/* --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" flat/* --repo "$GITHUB_REPOSITORY" --draft --generate-notes --title "HiResSpot ${TAG#v}"
+          fi

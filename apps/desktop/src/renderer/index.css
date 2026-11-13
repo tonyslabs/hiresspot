@@ -1,0 +1,520 @@
+@import "tailwindcss";
+@source "../../../../packages/ui/src";
+
+/* ===========================================================================
+   Cristal de Estudio — tokens de diseño
+   La carátula es la fuente de luz; el cromo es vidrio; el oro = alta fidelidad.
+   =========================================================================== */
+
+:root {
+  color-scheme: dark;
+  --bg: #0b0b0e;
+  --surface: #14141a;
+  --surface-2: #1e1e27;
+  --line: #2b2b36;
+  --fg: #ececf1;
+  --muted: #a8a8b6;
+  --accent: #f5b83d;
+  --accent-fg: #1a1204;
+  --gold-fg: #1a1204;
+  --danger: #f2777a;
+  --ok: #3ecf8e;
+  --warn-bg: rgba(245, 184, 61, 0.1);
+  --warn-line: rgba(245, 184, 61, 0.35);
+  /* "lo que suena": lo reescribe usePalette; por defecto, el oro */
+  --tint: var(--tint-d, var(--accent));
+  --tint-fg: var(--tint-fg-d, #1a1204);
+  --tint-soft: color-mix(in oklab, var(--tint) 16%, transparent);
+  /* movimiento */
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+  --dur-4: 520ms;
+  --dur-amb: 900ms;
+  /* geometría del cromo flotante */
+  --gutter: 12px;
+  --sidebar-w: 232px;
+  --chrome-left: calc(var(--sidebar-w) + var(--gutter) * 2);
+  --chrome-top: 72px;
+  --chrome-bottom: 96px;
+  /* Márgenes seguros (barra de estado / gestos). env() en navegadores y Electron; Capacitor (Android) inyecta --safe-area-inset-* */
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  --nav-h: 64px;
+  --dock-bottom: calc(var(--safe-bottom) + var(--gutter));
+  /* ---- Vidrio (oscuro) ---- */
+  --glass-tint-thin: rgb(16 16 22 / 0.5);
+  --glass-tint-regular: rgb(16 16 22 / 0.62);
+  --glass-tint-thick: rgb(16 16 22 / 0.74);
+  --glass-tint-lens: rgb(16 16 22 / 0.4);
+  --glass-bri: 0.7;
+  --glass-bri-lens: 0.62;
+  --glass-hi: rgb(255 255 255 / 0.22);
+  --glass-edge: rgb(255 255 255 / 0.07);
+  --glass-lo: rgb(0 0 0 / 0.35);
+  --glass-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -8px rgb(0 0 0 / 0.55);
+  --glass-spec-a: rgb(255 255 255 / 0.55);
+  --glass-spec-b: rgb(255 255 255 / 0.3);
+  --fill-1: rgb(255 255 255 / 0.06);
+  --fill-2: rgb(255 255 255 / 0.1);
+  --fill-3: rgb(255 255 255 / 0.16);
+  --fill-display: rgb(0 0 0 / 0.38);
+  --line-soft: rgb(255 255 255 / 0.08);
+  --fg-2: #c6c6d2;
+  --src-local: #c9a7ff;
+  --src-navidrome: #5fb0ff;
+  --src-spotify: #1ed760;
+  --scrim-amb: 64%;
+  --amb-op: 0.55;
+  --amb-1-default: #3a2a12;
+  --amb-2-default: #1c1a3a;
+  --amb-3-default: #0f2530;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f5f5f8;
+  --surface: #ffffff;
+  --surface-2: #ececf1;
+  --line: #d9d9e2;
+  --fg: #17171c;
+  --muted: #4a4a5a;
+  --accent: #9a6200;
+  --accent-fg: #ffffff;
+  --danger: #c4373b;
+  --ok: #12805a;
+  --warn-bg: rgba(154, 98, 0, 0.08);
+  --warn-line: rgba(154, 98, 0, 0.35);
+  --tint: var(--tint-l, var(--accent));
+  --tint-fg: var(--tint-fg-l, #ffffff);
+  --amb-1: var(--amb-l1, var(--amb-1-default));
+  --amb-2: var(--amb-l2, var(--amb-2-default));
+  --amb-3: var(--amb-l3, var(--amb-3-default));
+  /* ---- Vidrio (claro) ---- */
+  --glass-tint-thin: rgb(255 255 255 / 0.62);
+  --glass-tint-regular: rgb(255 255 255 / 0.72);
+  --glass-tint-thick: rgb(255 255 255 / 0.82);
+  --glass-tint-lens: rgb(255 255 255 / 0.58);
+  --glass-bri: 1.05;
+  --glass-bri-lens: 1.05;
+  --glass-hi: rgb(255 255 255 / 0.9);
+  --glass-edge: rgb(255 255 255 / 0.45);
+  --glass-lo: rgb(0 0 0 / 0.06);
+  --glass-shadow: 0 1px 2px rgb(20 20 40 / 0.08), 0 12px 32px -10px rgb(20 20 40 / 0.22);
+  --glass-spec-a: rgb(255 255 255 / 0.95);
+  --glass-spec-b: rgb(255 255 255 / 0.6);
+  --fill-1: rgb(0 0 0 / 0.04);
+  --fill-2: rgb(0 0 0 / 0.07);
+  --fill-3: rgb(0 0 0 / 0.12);
+  --fill-display: rgb(255 255 255 / 0.55);
+  --line-soft: rgb(0 0 0 / 0.08);
+  --fg-2: #3c3c4a;
+  --src-local: #6d3fd1;
+  --src-navidrome: #0b63c4;
+  --src-spotify: #0f7a3a;
+  --scrim-amb: 80%;
+  --amb-op: 0.4;
+  --amb-1-default: #f3e3c2;
+  --amb-2-default: #dcdcf5;
+  --amb-3-default: #d3e8ee;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+    --bg: #f5f5f8;
+    --surface: #ffffff;
+    --surface-2: #ececf1;
+    --line: #d9d9e2;
+    --fg: #17171c;
+    --muted: #4a4a5a;
+    --accent: #9a6200;
+    --accent-fg: #ffffff;
+    --danger: #c4373b;
+    --ok: #12805a;
+    --warn-bg: rgba(154, 98, 0, 0.08);
+    --warn-line: rgba(154, 98, 0, 0.35);
+    --tint: var(--tint-l, var(--accent));
+    --tint-fg: var(--tint-fg-l, #ffffff);
+    --amb-1: var(--amb-l1, var(--amb-1-default));
+    --amb-2: var(--amb-l2, var(--amb-2-default));
+    --amb-3: var(--amb-l3, var(--amb-3-default));
+    /* ---- Vidrio (claro) ---- */
+    --glass-tint-thin: rgb(255 255 255 / 0.62);
+    --glass-tint-regular: rgb(255 255 255 / 0.72);
+    --glass-tint-thick: rgb(255 255 255 / 0.82);
+    --glass-tint-lens: rgb(255 255 255 / 0.58);
+    --glass-bri: 1.05;
+    --glass-bri-lens: 1.05;
+    --glass-hi: rgb(255 255 255 / 0.9);
+    --glass-edge: rgb(255 255 255 / 0.45);
+    --glass-lo: rgb(0 0 0 / 0.06);
+    --glass-shadow: 0 1px 2px rgb(20 20 40 / 0.08), 0 12px 32px -10px rgb(20 20 40 / 0.22);
+    --glass-spec-a: rgb(255 255 255 / 0.95);
+    --glass-spec-b: rgb(255 255 255 / 0.6);
+    --fill-1: rgb(0 0 0 / 0.04);
+    --fill-2: rgb(0 0 0 / 0.07);
+    --fill-3: rgb(0 0 0 / 0.12);
+    --fill-display: rgb(255 255 255 / 0.55);
+    --line-soft: rgb(0 0 0 / 0.08);
+    --fg-2: #3c3c4a;
+    --src-local: #6d3fd1;
+    --src-navidrome: #0b63c4;
+    --src-spotify: #0f7a3a;
+    --scrim-amb: 80%;
+    --amb-op: 0.4;
+    --amb-1-default: #f3e3c2;
+    --amb-2-default: #dcdcf5;
+    --amb-3-default: #d3e8ee;
+  }
+}
+
+/* El ambiente parte del color de marca del tema; Ambient escribe --amb-d1..3 / --amb-l1..3 / --tint-d|l al sonar una pista */
+:root {
+  --amb-1: var(--amb-d1, var(--amb-1-default));
+  --amb-2: var(--amb-d2, var(--amb-2-default));
+  --amb-3: var(--amb-d3, var(--amb-3-default));
+}
+
+/* Colores del ambiente: registrados para poder fundirlos con transition */
+@property --amb-1 { syntax: "<color>"; inherits: true; initial-value: #3a2a12; }
+@property --amb-2 { syntax: "<color>"; inherits: true; initial-value: #1c1a3a; }
+@property --amb-3 { syntax: "<color>"; inherits: true; initial-value: #0f2530; }
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-line: var(--warn-line);
+  --color-fg-2: var(--fg-2);
+  --color-fill-1: var(--fill-1);
+  --color-fill-2: var(--fill-2);
+  --color-fill-3: var(--fill-3);
+  --color-fill-display: var(--fill-display);
+  --color-line-soft: var(--line-soft);
+  --color-tint: var(--tint);
+  --color-tint-fg: var(--tint-fg);
+  --color-tint-soft: var(--tint-soft);
+  --color-gold: var(--accent);
+  --color-gold-fg: var(--gold-fg);
+  --color-src-local: var(--src-local);
+  --color-src-navidrome: var(--src-navidrome);
+  --color-src-spotify: var(--src-spotify);
+}
+
+@theme {
+  --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "Cascadia Mono", "DejaVu Sans Mono", monospace;
+  --radius-chip: 6px;
+  --radius-ctl: 12px;
+  --radius-card: 16px;
+  --radius-panel: 20px;
+  --radius-island: 28px;
+  --text-display: 40px;
+  --text-display--line-height: 44px;
+  --text-display--font-weight: 700;
+  --text-display--letter-spacing: -0.025em;
+  --text-title-1: 28px;
+  --text-title-1--line-height: 34px;
+  --text-title-1--font-weight: 700;
+  --text-title-1--letter-spacing: -0.02em;
+  --text-title-2: 20px;
+  --text-title-2--line-height: 26px;
+  --text-title-2--font-weight: 650;
+  --text-title-2--letter-spacing: -0.015em;
+  --text-headline: 15px;
+  --text-headline--line-height: 20px;
+  --text-headline--font-weight: 600;
+  --text-headline--letter-spacing: -0.005em;
+  --text-body: 14px;
+  --text-body--line-height: 20px;
+  --text-callout: 13px;
+  --text-callout--line-height: 18px;
+  --text-callout--font-weight: 500;
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+  --text-caption--font-weight: 500;
+  --text-micro: 10.5px;
+  --text-micro--line-height: 12px;
+  --text-micro--font-weight: 600;
+  --text-micro--letter-spacing: 0.08em;
+  --shadow-cover: 0 2px 4px rgb(0 0 0 / 0.25), 0 10px 24px -8px rgb(0 0 0 / 0.45);
+  --shadow-lift: 0 4px 8px rgb(0 0 0 / 0.28), 0 22px 44px -12px rgb(0 0 0 / 0.6);
+  --ease-glide: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-swap: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-feature-settings: "cv11", "ss03";
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fill-3) transparent;
+}
+
+@layer components {
+/* ===========================================================================
+   Materiales de vidrio (máx. 4 capas con backdrop-filter visibles a la vez)
+   =========================================================================== */
+
+.glass-thin, .glass-regular, .glass-thick, .glass-lens {
+  position: relative;
+  isolation: isolate;
+  background: var(--_tint);
+  -webkit-backdrop-filter: blur(var(--_blur)) saturate(var(--_sat)) brightness(var(--glass-bri));
+  backdrop-filter: blur(var(--_blur)) saturate(var(--_sat)) brightness(var(--glass-bri));
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-hi),
+    inset 0 0 0 1px var(--glass-edge),
+    inset 0 -1px 0 0 var(--glass-lo),
+    var(--glass-shadow);
+  transition: transform var(--dur-2) var(--ease-spring), box-shadow var(--dur-1) linear, background-color var(--dur-1) linear;
+}
+
+/* Brillo especular: aro de 1px con gradiente, recortado con máscara */
+.glass-thin::before, .glass-regular::before, .glass-thick::before, .glass-lens::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(135deg, var(--glass-spec-a) 0%, rgb(255 255 255 / 0.08) 26%, transparent 50%, rgb(255 255 255 / 0.06) 74%, var(--glass-spec-b) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+.glass-thin    { --_tint: var(--glass-tint-thin);    --_blur: 16px; --_sat: 1.6; border-radius: 999px; }
+.glass-regular { --_tint: var(--glass-tint-regular); --_blur: 28px; --_sat: 1.8; border-radius: 28px; }
+.glass-thick   { --_tint: var(--glass-tint-thick);   --_blur: 44px; --_sat: 1.8; border-radius: 20px; }
+.glass-lens    {
+  --_tint: var(--glass-tint-lens);
+  border-radius: 999px;
+  /* La refracción va PRIMERO y con poco blur (verificado en Electron: con blur previo el bisel se emborrona).
+     --lens: url(#lens-…) y --lens-blur los pone useLensFilter; sin ellos degrada a blur normal de 14px. */
+  --lens-blur: 14px;
+  -webkit-backdrop-filter: var(--lens, ) blur(var(--lens-blur)) saturate(1.5) brightness(var(--glass-bri-lens));
+  backdrop-filter: var(--lens, ) blur(var(--lens-blur)) saturate(1.5) brightness(var(--glass-bri-lens));
+}
+
+/* Estados de los vidrios interactivos pequeños (Play lente, píldoras) */
+.glass-press:hover { --glass-hi: rgb(255 255 255 / 0.34); }
+.glass-press:active { transform: scale(0.97); }
+
+/* Sin transparencia: sólido y sin brillos */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-thin, .glass-regular, .glass-thick, .glass-lens {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+  }
+  .glass-thin::before, .glass-regular::before, .glass-thick::before, .glass-lens::before { display: none; }
+  .ambient { display: none; }
+}
+:root[data-glass="solid"] .glass-thin, :root[data-glass="solid"] .glass-regular, :root[data-glass="solid"] .glass-thick, :root[data-glass="solid"] .glass-lens {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+}
+:root[data-glass="solid"] .glass-thin::before, :root[data-glass="solid"] .glass-regular::before, :root[data-glass="solid"] .glass-thick::before, :root[data-glass="solid"] .glass-lens::before { display: none; }
+:root[data-glass="solid"] .ambient, :root[data-ambient="off"] .ambient { display: none; }
+
+@media (forced-colors: active) {
+  .glass-thin, .glass-regular, .glass-thick, .glass-lens {
+    backdrop-filter: none;
+    background: Canvas;
+    box-shadow: none;
+    border: 1px solid CanvasText;
+  }
+  .glass-thin::before, .glass-regular::before, .glass-thick::before, .glass-lens::before { display: none; }
+}
+
+@media (width < 1080px) {
+  :root { --sidebar-w: 64px; }
+}
+
+/* Páginas con lista virtualizada: el marco fija el título; la lista llega hasta abajo y pasa bajo el dock */
+.page-frame {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: calc(var(--chrome-top) + 12px) 0 0 calc(var(--chrome-left) + 20px);
+}
+.page-frame > .vlist { padding-right: 32px; }
+
+/* ===========================================================================
+   Lienzo ambiental, páginas con scroll bajo el cromo, skeletons, ecualizador
+   =========================================================================== */
+
+.ambient { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.ambient-mesh {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(40% 50% at 20% 25%, var(--amb-1) 0, transparent 70%),
+    radial-gradient(45% 55% at 82% 18%, var(--amb-2) 0, transparent 70%),
+    radial-gradient(55% 60% at 55% 88%, var(--amb-3) 0, transparent 70%),
+    var(--bg);
+  transition: --amb-1 var(--dur-amb) ease, --amb-2 var(--dur-amb) ease, --amb-3 var(--dur-amb) ease;
+}
+.ambient-art {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12.5vw;
+  height: 12.5vh;
+  object-fit: cover;
+  transform-origin: 0 0;
+  transform: scale(8);
+  filter: blur(10px) saturate(1.5);
+  opacity: 0;
+  transition: opacity var(--dur-amb) ease;
+}
+.ambient-art[data-on="true"] { opacity: var(--amb-op); }
+.ambient-scrim {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in oklab, var(--bg) var(--scrim-amb), transparent);
+}
+.ambient-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+.page {
+  position: relative;
+  height: 100%;
+  overflow: auto;
+  padding:
+    calc(var(--chrome-top) + 12px) 32px
+    calc(var(--chrome-bottom) + 16px) calc(var(--chrome-left) + 20px);
+  scroll-padding-block: var(--chrome-top) var(--chrome-bottom);
+  scrollbar-gutter: stable;
+}
+
+/* Pantalla Reproduciendo abierta: el cromo no cuenta (sus vidrios dejan de pintarse) y el ambiente se vuelve más vivo */
+.shell[data-np] > main,
+.shell[data-np] > aside,
+.shell[data-np] > header,
+.shell[data-np] > footer { visibility: hidden; }
+.shell[data-np] .ambient-scrim { opacity: 0.7; }
+.shell[data-np] .ambient-mesh { animation: aurora 120s linear infinite; }
+@keyframes aurora { from { transform: rotate(0deg) scale(1.15); } to { transform: rotate(360deg) scale(1.15); } }
+:root[data-idle] .ambient-mesh { animation-play-state: paused !important; }
+
+/* Venn de Comparar: se mezcla en aditivo sobre oscuro y en multiplicativo sobre claro */
+.venn-blend { mix-blend-mode: screen; }
+:root[data-theme="light"] .venn-blend { mix-blend-mode: multiply; }
+@media (prefers-color-scheme: light) { :root:not([data-theme]) .venn-blend { mix-blend-mode: multiply; } }
+
+@keyframes skeleton-sweep { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg, var(--fill-1) 25%, var(--fill-2) 50%, var(--fill-1) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-sweep 1.4s linear infinite;
+  border-radius: var(--radius-ctl);
+}
+
+@keyframes eq { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
+.eq { display: inline-flex; align-items: flex-end; gap: 2px; width: 16px; height: 14px; }
+.eq > i { display: block; width: 3px; height: 100%; border-radius: 999px; background: var(--tint); transform-origin: bottom; animation: eq 900ms var(--ease-swap) infinite; }
+.eq > i:nth-child(2) { animation-duration: 700ms; animation-delay: -200ms; }
+.eq > i:nth-child(3) { animation-duration: 1100ms; animation-delay: -450ms; }
+:root:not([data-playing]) .eq > i { animation-play-state: paused; }
+
+/* Movimiento reducido: sin transformaciones, se conservan fundidos cortos */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 120ms !important; scroll-behavior: auto !important; }
+  .eq > i:nth-child(1) { transform: scaleY(0.4); }
+  .eq > i:nth-child(2) { transform: scaleY(0.9); }
+  .eq > i:nth-child(3) { transform: scaleY(0.6); }
+  .ambient-mesh { transition-duration: 150ms; }
+}
+:root[data-motion="reduced"] *, :root[data-motion="reduced"] *::before, :root[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 120ms !important;
+}
+
+}
+
+/* Selectores y entradas de ajustes: contraste propio (el fill translúcido se perdía en oscuro) */
+@layer components {
+  .ctl-select {
+    appearance: none;
+    background-color: var(--surface-2);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%239a9aaa' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    border: 1px solid var(--line);
+    color: var(--fg);
+    padding-right: 2rem;
+    cursor: pointer;
+  }
+  .ctl-select:hover { border-color: color-mix(in oklab, var(--fg) 35%, var(--line)); }
+  .ctl-select:focus-visible, .ctl-input:focus-visible { outline: 2px solid var(--tint); outline-offset: 1px; }
+  .ctl-select option { background-color: var(--surface-2); color: var(--fg); }
+  .ctl-input {
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--fg);
+  }
+}
+
+/* ===========================================================================
+   Teléfono (< 768 px): barra de navegación inferior en vez de la lateral, mini reproductor sobre ella
+   y páginas a todo el ancho. Va sin @layer para ganar a las reglas de escritorio de arriba.
+   =========================================================================== */
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@media (width < 768px) {
+  :root {
+    --sidebar-w: 0px;
+    --chrome-left: var(--gutter);
+    --chrome-top: calc(var(--safe-top) + 60px);
+    --dock-bottom: calc(var(--safe-bottom) + var(--nav-h) + var(--gutter) * 2);
+    --chrome-bottom: calc(var(--dock-bottom) + 72px);
+  }
+  .page {
+    padding: calc(var(--chrome-top) + 8px) 16px calc(var(--chrome-bottom) + 12px) 16px;
+    scrollbar-gutter: auto;
+  }
+  .page-frame { padding-left: 16px; padding-right: 16px; }
+  .page-frame > .vlist { padding-right: 0; }
+}
