@@ -66,6 +66,8 @@ Notas sobre los binarios:
 
 ## Seguridad y privacidad
 
+Política de seguridad y cómo reportar una vulnerabilidad: [SECURITY.md](SECURITY.md).
+
 - Escritorio (Electron): sandbox activado, `contextIsolation`, CSP estricta, protocolo propio restringido a las carpetas que autorizas y verificación del remitente en cada llamada IPC.
 - Protección de credenciales: almacenamiento cifrado mediante las API de llavero del sistema operativo (`safeStorage` en escritorio y Android Keystore en la aplicación móvil). Si el sistema no dispone de un llavero seguro activo, las contraseñas no se almacenan en disco.
 - Conexión con Spotify: flujo OAuth 2.0 PKCE sin necesidad de exponer secretos de cliente.
