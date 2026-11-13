@@ -44,19 +44,24 @@ if [[ "$DRY" == "--dry-run" ]]; then
   exit 0
 fi
 
-# 3) subir el APK y actualizar SHA256SUMS.txt del release (si existe)
-gh release view "$TAG" >/dev/null 2>&1 || gh release list --json tagName --jq '.[].tagName' | grep -qx "$TAG" \
-  || { echo "✖ No encuentro el release de $TAG. Súbelo primero (el workflow lo crea en borrador al subir el tag)." >&2; exit 1; }
-gh release upload "$TAG" "$APK" --clobber
+# 3) subir el APK y añadir su línea a SHA256SUMS.txt del release (también funciona con borradores)
+REPO_JSON=$(gh api repos/:owner/:repo/releases --jq ".[] | select(.tag_name==\"$TAG\") | {id, assets: [.assets[] | {name, id}]}") \
+  || { echo "✖ No pude consultar los releases con gh" >&2; exit 1; }
+[[ -n "$REPO_JSON" ]] || { echo "✖ No encuentro el release de $TAG. El workflow lo crea en borrador al subir el tag." >&2; exit 1; }
+SUMS_ID=$(jq -r '.assets[] | select(.name=="SHA256SUMS.txt") | .id' <<<"$REPO_JSON")
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
-if gh release download "$TAG" -p SHA256SUMS.txt -D "$TMP" >/dev/null 2>&1; then
-  grep -v "HiResSpot-.*\.apk" "$TMP/SHA256SUMS.txt" > "$TMP/new" || true
+if [[ -n "$SUMS_ID" ]]; then
+  # Hay sumas publicadas: hay que poder leerlas; si no, NO se toca el archivo (sobrescribirlo borraría las demás líneas)
+  gh api -H "Accept: application/octet-stream" "repos/:owner/:repo/releases/assets/$SUMS_ID" > "$TMP/old" \
+    && [[ -s "$TMP/old" ]] || { echo "✖ No pude leer SHA256SUMS.txt del release; no lo modifico. Añade a mano: $SUM  HiResSpot-$VERSION.apk" >&2; exit 1; }
+  grep -v "HiResSpot-.*\.apk" "$TMP/old" > "$TMP/SHA256SUMS.txt" || true
 else
-  : > "$TMP/new"
+  : > "$TMP/SHA256SUMS.txt"
 fi
-echo "$SUM  HiResSpot-$VERSION.apk" >> "$TMP/new"
-mv "$TMP/new" "$TMP/SHA256SUMS.txt"
+echo "$SUM  HiResSpot-$VERSION.apk" >> "$TMP/SHA256SUMS.txt"
+
+gh release upload "$TAG" "$APK" --clobber
 gh release upload "$TAG" "$TMP/SHA256SUMS.txt" --clobber
 echo "✔ APK y sumas adjuntos a $TAG"

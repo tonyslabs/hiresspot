@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "description": "Interfaz React de HiResSpot, compartida por los shells de escritorio y móvil",
+  "license": "MIT",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",

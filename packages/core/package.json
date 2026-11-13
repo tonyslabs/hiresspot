@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "description": "Dominio, fuentes, matching y reproductor de HiResSpot (TypeScript puro, sin dependencias de plataforma)",
+  "license": "MIT",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",

@@ -85,9 +85,12 @@ jobs:
         with:
           path: dist
           merge-multiple: true
-      - name: Sumas de verificación
-        working-directory: dist
+      # upload/download-artifact conservan subcarpetas (deb/x64/…, zip/win32/x64/…): se aplanan antes de sumar y subir
+      - name: Aplanar archivos y calcular sumas
         run: |
+          mkdir flat
+          find dist -type f -exec cp -t flat {} +
+          cd flat
           ls -la
           sha256sum * > SHA256SUMS.txt
           cat SHA256SUMS.txt
@@ -97,7 +100,7 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/* --clobber --repo "$GITHUB_REPOSITORY"
+            gh release upload "$TAG" flat/* --clobber --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --draft --generate-notes --title "HiResSpot ${TAG#v}"
+            gh release create "$TAG" flat/* --repo "$GITHUB_REPOSITORY" --draft --generate-notes --title "HiResSpot ${TAG#v}"
           fi

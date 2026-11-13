@@ -4,6 +4,7 @@
   "version": "2.0.0",
   "private": true,
   "description": "HiResSpot para escritorio (Electron)",
+  "license": "MIT",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
